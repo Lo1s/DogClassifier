@@ -6,6 +6,7 @@ from pathlib import Path
 import idx2numpy
 import requests
 import validators
+import tarfile
 
 
 class URLs:
@@ -33,26 +34,6 @@ data = {
 }
 
 
-def get_mnist_dataset(print_progress=True):
-    datasets = URLs.MNIST_DATASET
-
-    for dataset in datasets:
-        filepath = download_file(dataset, print_progress=print_progress)
-
-        train_set = 'train' in str(filepath)
-        images = 'images' in str(filepath)
-        set_type = 'train' if train_set else 'test'
-        data_type = 'images' if images else 'labels'
-        dest = URLs.DATA_PATH / set_type / data_type
-        if not os.path.exists(dest):
-            os.makedirs(dest)
-
-        file_dest = extract_file(str(filepath), dest, print_progress=print_progress)
-        data[set_type][data_type] = load_idx_file(str(file_dest))
-
-    return data
-
-
 def download_file(url, path=URLs.DATA_PATH, print_progress=False):
     if not os.path.exists(path):
         path = URLs.DATA_PATH
@@ -74,18 +55,6 @@ def download_file(url, path=URLs.DATA_PATH, print_progress=False):
             f.write(response.content)
 
     return filepath
-
-
-def extract_file(filepath, dest, print_progress=False):
-    file_dest = dest / os.path.splitext(os.path.basename(filepath))[0]
-    if os.path.exists(file_dest):
-        if print_progress: print('File already extracted, skipping: ', file_dest)
-        return file_dest
-
-    with gzip.open(filepath, 'r') as file_in:
-        with open(file_dest, 'wb') as file_out:
-            shutil.copyfileobj(file_in, file_out)
-            return file_dest
 
 
 def is_already_downloaded(filepath):
