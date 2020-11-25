@@ -23,9 +23,11 @@ class PETS:
         ('labels', 'https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz')
     ]
 
-    PROJECT_PATH = Path.cwd()
-    DATA_DIR = 'data'
-    DATA_PATH = PROJECT_PATH / DATA_DIR
+    project_path = Path.cwd()
+    data_dir = 'data'
+    data_path = project_path / data_dir
+    training_file = 'training.pt'
+    test_file = 'test.pt'
 
     def __init__(
             self,
@@ -39,6 +41,31 @@ class PETS:
         if download:
             self.download()
 
+    @property
+    def raw_folder(self) -> str:
+        return os.path.join(self.root, self.__class__.__name__, 'raw')
+
+    @property
+    def processed_folder(self) -> str:
+        return os.path.join(self.root, self.__class__.__name__, 'processed')
+
+    def _check_exists(self) -> bool:
+        return os.path.exists(os.path.join(self.processed_folder, self.training_file))
+
+    def download(self):
+        if self._check_exists():
+            return
+
+        os.makedirs(self.raw_folder, exist_ok=True)
+        os.makedirs(self.processed_folder, exist_ok=True)
+
+        for key, url in self.resources:
+            filepath = download_file(url, path=Path(self.raw_folder), print_progress=self.print_progress)
+
+            print('Processing: ', filepath)
+            dest = os.path.join(self.processed_folder, key)
+            self.extract_file(filepath, Path(dest))
+
         img_dir = os.path.join(self.processed_folder, 'data', 'images')
         training_set = {
             'data': [],
@@ -51,29 +78,10 @@ class PETS:
                 training_set['data'].append(image_to_tensor(filepath))
                 training_set['labels'].append(re.findall(r'(.+)_\d+.jpg$', file)[0])
 
-        print(training_set)
+        with open(os.path.join(self.processed_folder, self.training_file), 'wb') as f:
+            torch.save(training_set, f)
 
-    @property
-    def raw_folder(self) -> str:
-        return os.path.join(self.root, self.__class__.__name__, 'raw')
-
-    @property
-    def processed_folder(self) -> str:
-        return os.path.join(self.root, self.__class__.__name__, 'processed')
-
-    def _check_exists(self) -> bool:
-        return os.path.exists(self.root)
-
-    def download(self):
-        os.makedirs(self.raw_folder, exist_ok=True)
-        os.makedirs(self.processed_folder, exist_ok=True)
-
-        for key, url in self.resources:
-            filepath = download_file(url, path=Path(self.raw_folder), print_progress=self.print_progress)
-
-            print('Processing: ', filepath)
-            dest = os.path.join(self.processed_folder, key)
-            self.extract_file(filepath, Path(dest))
+        print('Done!')
 
     def extract_file(self, filepath, dest):
         if os.path.exists(dest):
