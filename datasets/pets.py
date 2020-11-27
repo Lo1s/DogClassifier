@@ -8,6 +8,7 @@ from pathlib import Path
 from torchvision.transforms import ToTensor
 from utils.data import download_file
 from utils.image import imgshow, image_to_tensor
+from collections import Counter
 
 
 class PETS:
@@ -26,6 +27,7 @@ class PETS:
     project_path = Path.cwd()
     data_dir = 'data'
     data_path = project_path / data_dir
+    data_file = 'data.pt'
     training_file = 'training.pt'
     test_file = 'test.pt'
 
@@ -33,13 +35,18 @@ class PETS:
             self,
             root: str,
             download: bool,
-            print_progress=True
+            print_progress=True,
+            train2test_split_ratio=0.6
     ):
         self.root = root
         self.print_progress = print_progress
+        self.train2test_split_ratio = train2test_split_ratio
 
         if download:
             self.download()
+
+        dataset = torch.load(os.path.join(self.processed_folder, self.data_file))
+        self.data, self.target = dataset['data'], dataset['labels']
 
     @property
     def raw_folder(self) -> str:
@@ -50,7 +57,7 @@ class PETS:
         return os.path.join(self.root, self.__class__.__name__, 'processed')
 
     def _check_exists(self) -> bool:
-        return os.path.exists(os.path.join(self.processed_folder, self.training_file))
+        return os.path.exists(os.path.join(self.processed_folder, self.data_file))
 
     def download(self):
         if self._check_exists():
@@ -67,7 +74,7 @@ class PETS:
             self.extract_file(filepath, Path(dest))
 
         img_dir = os.path.join(self.processed_folder, 'data', 'images')
-        training_set = {
+        dataset = {
             'data': [],
             'labels': []
         }
@@ -75,13 +82,41 @@ class PETS:
             filepath = os.path.join(img_dir, file)
             extension = os.path.splitext(filepath)[1]
             if extension == '.jpg':
-                training_set['data'].append(image_to_tensor(filepath))
-                training_set['labels'].append(re.findall(r'(.+)_\d+.jpg$', file)[0])
+                dataset['data'].append(image_to_tensor(filepath))
+                dataset['labels'].append(re.findall(r'(.+)_\d+.jpg$', file)[0])
 
-        with open(os.path.join(self.processed_folder, self.training_file), 'wb') as f:
-            torch.save(training_set, f)
+        with open(os.path.join(self.processed_folder, self.data_file), 'wb') as f:
+            torch.save(dataset, f)
 
         print('Done!')
+
+    def split_data_set(self):
+        keys = list(Counter(self.target).keys())
+        counts = list(Counter(self.target).values())
+        train_data = []
+        train_labels = []
+        test_data = []
+        test_labels = []
+
+        for i in range(len(keys)):
+            count = counts[i]
+            key = keys[i]
+            idx = [index for index, label in enumerate(self.target) if label == key]
+            if count is not len(idx):
+                raise RuntimeError(f'Size of the list of indexes for given breed={key} does not match')
+
+            split = int(count * self.train2test_split_ratio)
+            train_data.extend(map(self.data.__getitem__, idx[:split]))  # alternative: self.data[i] for i in idx[:split]
+            train_labels.extend(map(self.target.__getitem__, idx[:split]))
+
+            test_data.extend(map(self.data.__getitem__, idx[split:]))
+            test_labels.extend(map(self.target.__getitem__, idx[split:]))
+
+        if ((len(train_data) + len(test_data)) != len(self.data)) \
+                or ((len(train_labels) + len(test_labels)) != len(self.target)):
+            raise RuntimeError('Train + Test sizes does not match the total count')
+
+        return train_data, train_labels, test_data, test_labels
 
     def extract_file(self, filepath, dest):
         if os.path.exists(dest):
@@ -92,5 +127,3 @@ class PETS:
 
         tar = tarfile.open(filepath, 'r:gz')
         tar.extractall(dest)
-
-
