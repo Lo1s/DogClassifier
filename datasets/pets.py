@@ -93,10 +93,7 @@ class PETS:
     def split_data_set(self):
         keys = list(Counter(self.target).keys())
         counts = list(Counter(self.target).values())
-        train_data = []
-        train_labels = []
-        test_data = []
-        test_labels = []
+        train_data, train_labels, test_data, test_labels = [], [], [], []
 
         for i in range(len(keys)):
             count = counts[i]
