@@ -36,7 +36,7 @@ class PETS:
             root: str,
             download: bool,
             print_progress=True,
-            train2test_split_ratio=0.6
+            train2test_split_ratio=0.8
     ):
         self.root = root
         self.print_progress = print_progress

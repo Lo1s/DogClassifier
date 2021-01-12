@@ -7,7 +7,6 @@ from torchvision.transforms import ToTensor
 def imgshow(img):
     npimg = img.numpy()
     plt.imshow(npimg.transpose(1, 2, 0))
-    plt.show()
 
 
 def image_to_tensor(path: str) -> torch.Tensor:
