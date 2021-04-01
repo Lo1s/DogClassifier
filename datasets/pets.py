@@ -36,7 +36,7 @@ class PETS:
             root: str,
             download: bool,
             print_progress=True,
-            train2test_split_ratio=0.8
+            train2test_split_ratio=0.6
     ):
         self.root = root
         self.print_progress = print_progress
@@ -46,7 +46,7 @@ class PETS:
             self.download()
 
         dataset = torch.load(os.path.join(self.processed_folder, self.data_file))
-        self.data, self.target = dataset['data'], dataset['labels']
+        self.data, self.targets = dataset['data'], dataset['labels']
 
     @property
     def raw_folder(self) -> str:
@@ -91,26 +91,26 @@ class PETS:
         print('Done!')
 
     def split_data_set(self):
-        keys = list(Counter(self.target).keys())
-        counts = list(Counter(self.target).values())
+        keys = list(Counter(self.targets).keys())
+        counts = list(Counter(self.targets).values())
         train_data, train_labels, test_data, test_labels = [], [], [], []
 
         for i in range(len(keys)):
             count = counts[i]
             key = keys[i]
-            idx = [index for index, label in enumerate(self.target) if label == key]
+            idx = [index for index, label in enumerate(self.targets) if label == key]
             if count is not len(idx):
                 raise RuntimeError(f'Size of the list of indexes for given breed={key} does not match')
 
             split = int(count * self.train2test_split_ratio)
             train_data.extend(map(self.data.__getitem__, idx[:split]))  # alternative: self.data[i] for i in idx[:split]
-            train_labels.extend(map(self.target.__getitem__, idx[:split]))
+            train_labels.extend(map(self.targets.__getitem__, idx[:split]))
 
             test_data.extend(map(self.data.__getitem__, idx[split:]))
-            test_labels.extend(map(self.target.__getitem__, idx[split:]))
+            test_labels.extend(map(self.targets.__getitem__, idx[split:]))
 
         if ((len(train_data) + len(test_data)) != len(self.data)) \
-                or ((len(train_labels) + len(test_labels)) != len(self.target)):
+                or ((len(train_labels) + len(test_labels)) != len(self.targets)):
             raise RuntimeError('Train + Test sizes does not match the total count')
 
         return train_data, train_labels, test_data, test_labels

@@ -1,4 +1,7 @@
-from scikit_image import io, transform
+from PIL import Image
+from skimage import io, transform
+
+from datasets.transform.ToTensor import ToTensor
 
 
 class Rescale(object):
@@ -18,7 +21,8 @@ class Rescale(object):
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
 
-        h, w = image.shape[:2]
+        h, w = image.shape[0:2]
+
         if isinstance(self.output_size, int):
             if h > w:
                 new_h, new_w = self.output_size * h / w, self.output_size
