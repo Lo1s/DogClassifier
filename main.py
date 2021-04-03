@@ -1,11 +1,8 @@
-import torchvision
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
-import os
 
-from torchvision import transforms, datasets, models
+from torchvision import transforms, models
 from torch.optim import lr_scheduler
 from datasets import PETS
 from datasets.pets_dataset import PetsDataset
@@ -14,11 +11,8 @@ from datasets.transform.RandomCrop import RandomCrop
 from datasets.transform.Rescale import Rescale
 from torch.utils.data import DataLoader
 
-from test.visualize import visualize_model
-from utils.image import imgshow
-from utils.sample import show_samples
+from utils.visualize import visualize_model
 from model.train import train_model
-from pathlib import Path
 
 if __name__ == '__main__':
     
@@ -118,5 +112,8 @@ if __name__ == '__main__':
     # Decay LR by a factor of 0.1 every 7 epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 
-    model_conv = train_model(model_ft, dataloaders, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler, device, num_epochs=1)
-    visualize_model(model_conv, dataloaders, pets_datasets['val'].classes, 6)
+    model_conv = train_model(model_ft, dataloaders, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler, device, num_epochs=25)
+
+    torch.save(model_conv.state_dict(), 'state_dict_model.pt')
+
+    visualize_model(model_conv, dataloaders, list(pets_datasets['val'].classes), device, 6)

@@ -1,5 +1,5 @@
 import torch
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -10,9 +10,13 @@ def visualize_model(model, dataloaders, class_names, device, num_images=6):
     fig = plt.figure()
 
     with torch.no_grad():
-        for i, (data, targets) in enumerate(dataloaders['val']):
-            data = data.to(device)
-            targets = targets.to(device)
+        for i, sample in enumerate(dataloaders['val']):
+            # computation to GPU
+            image = sample["image"]
+            label = sample["label"]
+
+            data = image.to(device=device, dtype=torch.float)
+            targets = label.to(device)
 
             outputs = model(data)
             _, preds = torch.max(outputs, 1)
