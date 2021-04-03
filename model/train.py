@@ -2,7 +2,7 @@ import time
 import torch
 import copy
 
-def train_model(model, dataloaders, criterion, optimizer, scheduler, device, num_epochs=25):
+def train_model(model, dataloaders, dataset_sizes, criterion, optimizer, scheduler, device, num_epochs=25):
     now = time.time()
     best_model = copy.deepcopy(model.state_dict())
     best_acc = 0.0
@@ -20,7 +20,7 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, device, num
             if phase == 'train':
                 model.train()
             else:
-                model.val()
+                model.eval()
 
             running_loss = 0.0
             running_corrects = 0
@@ -31,8 +31,8 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, device, num
                 image = sample["image"]
                 label = sample["label"]
 
-                data = image.to(device)
-                targets = torch.tensor(label).to(device)
+                data = image.to(device=device, dtype=torch.float)
+                targets = label.to(device)
 
                 # zero the parameter grads
                 optimizer.zero_grad()
@@ -50,7 +50,7 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, device, num
                         optimizer.step()
 
                 # statistics
-                running_loss += loss.item() * data.size()
+                running_loss += loss.item() * data.size(0)
                 running_corrects += torch.sum(preds == targets.data) # debug target.data
 
             if phase == 'train':

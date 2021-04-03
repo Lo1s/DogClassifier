@@ -1,6 +1,9 @@
+import torch
+import matplotlib as plt
+import numpy as np
 
 
-def visualize_model(model, num_images=6):
+def visualize_model(model, dataloaders, class_names, device, num_images=6):
     was_training = model.training
     model.eval()
     images_so_far = 0
@@ -19,14 +22,13 @@ def visualize_model(model, num_images=6):
                 ax = plt.subplot(num_images // 2, 2, images_so_far)
                 ax.axis('off')
                 ax.set_title('predicted: {}'.format(class_names[preds[j]]))
-                imshow(inputs.cpu().data[j])
+                imshow(data.cpu().data[j])
 
                 if images_so_far == num_images:
                     model.train(mode=was_training)
                     return
 
             model.train(mode=was_training)
-
 
 
 def imshow(inp, title=None):
