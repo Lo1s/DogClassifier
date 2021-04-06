@@ -89,9 +89,9 @@ if __name__ == '__main__':
             print('-' * 10 + ' Result ' + '-' * 10)
             result_dict = {list(class_to_idx.keys())[i]: output.item() for i, output in enumerate(outputs[0])}
 
-            dict(sorted(result_dict.items(), key=lambda item: item[1]))
-            for item in result_dict:
-                print(f'{item}: {result_dict[item]}')
+            result_dict = dict(sorted(result_dict.items(), key=lambda item: item[1], reverse=True))
+            for record in result_dict:
+                print(f'{record}: {result_dict[record]}')
 
     else:
         criterion = nn.CrossEntropyLoss()
